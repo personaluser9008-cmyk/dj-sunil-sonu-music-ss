@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DJ SUNIL SONU - Music Player</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            var(--bg-color): #0f2027;
+            --gradient-1: #203a43;
+            --gradient-2: #2c5364;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-color: #ffffff;
+            --accent-color: #00ffcc;
+            --blur-amount: 15px;
+            --animation-speed: 5s;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
+        body { 
+            background: linear-gradient(45deg, var(--bg-color), var(--gradient-1), var(--gradient-2));
+            background-size: 400% 400%;
+            animation: gradientBG var(--animation-speed) ease infinite;
+            color: var(--text-color); height: 100vh; overflow: hidden;
+            display: flex; flex-direction: column; transition: all 0.5s ease;
+        }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        .glass {
+            background: var(--glass-bg); backdrop-filter: blur(var(--blur-amount));
+            -webkit-backdrop-filter: blur(var(--blur-amount));
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); transition: all 0.3s ease;
+        }
+        
+        .header { padding: 15px; margin: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        
+        /* Yaha aapki Photo "1001578627.png" ka link set kiya gaya hai */
+        .app-icon { width: 40px; height: 40px; border-radius: 10px; background: url('1001578627.png') center/cover; }
+        
+        .app-title { font-size: 1.2rem; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .settings-btn { background: none; border: none; color: white; font-size: 1.5rem; }
+
+        .main-container { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .now-playing-visual { height: 250px; display: flex; align-items: center; justify-content: center; border-radius: 30px; }
+        .disc { width: 150px; height: 150px; border-radius: 50%; background: conic-gradient(#333, #111, #333, #111, #333); border: 5px solid var(--glass-border); display: flex; align-items: center; justify-content: center; animation: spin 4s linear infinite paused; }
+        .disc.playing { animation-play-state: running; }
+        .disc::after { content: ''; width: 30px; height: 30px; background: var(--bg-color); border-radius: 50%; border: 2px solid var(--accent-color); }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        .track-info { text-align: center; }
+        .track-title { font-size: 1.5rem; font-weight: bold; }
+        .track-artist { font-size: 0.9rem; opacity: 0.8; }
+
+        .controls-container { padding: 20px; margin-top: auto; }
+        .progress-bar { width: 100%; height: 6px; background: var(--glass-border); border-radius: 3px; cursor: pointer; }
+        .progress { width: 0%; height: 100%; background: var(--accent-color); border-radius: 3px; position: relative; transition: width 0.1s linear; }
+        .progress::after { content: ''; position: absolute; right: -5px; top: -4px; width: 14px; height: 14px; background: #fff; border-radius: 50%; }
+        .time-info { display: flex; justify-content: space-between; font-size: 0.8rem; margin-top: 5px; opacity: 0.8; }
+        
+        .buttons { display: flex; justify-content: space-around; align-items: center; margin-top: 15px; }
+        .btn { background: none; border: none; color: white; font-size: 1.5rem; }
+        .play-pause { width: 60px; height: 60px; border-radius: 50%; background: var(--glass-bg); border: 2px solid var(--accent-color); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: var(--accent-color); }
+        #audio-upload { display: none; }
+
+        /* Settings CSS */
+        .settings-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 100; display: flex; align-items: flex-end; transform: translateY(100%); transition: transform 0.4s; }
+        .settings-overlay.active { transform: translateY(0); }
+        .settings-panel { width: 100%; height: 80vh; border-radius: 30px 30px 0 0; padding: 20px; overflow-y: auto; }
+        .settings-header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; margin-bottom: 15px; }
+        .theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .theme-btn { padding: 10px; border-radius: 10px; border: 1px solid var(--glass-border); color: white; font-size: 0.8rem; text-align: center; }
+        .theme-btn.active { border-color: var(--accent-color); box-shadow: 0 0 10px var(--accent-color); }
+        .control-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; }
+        input[type="range"] { width: 60%; -webkit-appearance: none; background: var(--glass-border); height: 4px; border-radius: 2px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: var(--accent-color); border-radius: 50%; }
+    </style>
+</head>
+<body>
+    <header class="header glass">
+        <div class="header-left">
+            <div class="app-icon"></div>
+            <div class="app-title">DJ SUNIL SONU</div>
+        </div>
+        <button class="settings-btn" onclick="toggleSettings()"><i class="fas fa-cog"></i></button>
+    </header>
+
+    <div class="main-container">
+        <div class="now-playing-visual glass"><div class="disc" id="disc"></div></div>
+        <div class="track-info">
+            <div class="track-title" id="track-title">No Track Selected</div>
+            <div class="track-artist" id="track-artist">Tap folder to load music</div>
+        </div>
+    </div>
+
+    <div class="controls-container glass">
+        <div class="progress-bar" id="progress-bar" onclick="seekAudio(event)">
+            <div class="progress" id="progress"></div>
+        </div>
+        <div class="time-info"><span id="current-time">0:00</span><span id="total-time">0:00</span></div>
+        <div class="buttons">
+            <button class="btn"><i class="fas fa-random"></i></button>
+            <button class="btn"><i class="fas fa-step-backward"></i></button>
+            <button class="play-pause" onclick="togglePlay()"><i class="fas fa-play" id="play-icon"></i></button>
+            <button class="btn"><i class="fas fa-step-forward"></i></button>
+            <label class="btn" for="audio-upload"><i class="fas fa-folder-open"></i></label>
+            <input type="file" id="audio-upload" accept="audio/*" onchange="loadAudio(event)">
+        </div>
+    </div>
+    <audio id="audio-player"></audio>
+
+    <div class="settings-overlay" id="settings-overlay">
+        <div class="settings-panel glass">
+            <div class="settings-header"><h2>Settings & Themes</h2><button class="btn" onclick="toggleSettings()"><i class="fas fa-times"></i></button></div>
+            
+            <h3 style="color:var(--accent-color); margin-bottom:10px;">Themes</h3>
+            <div class="theme-grid" id="theme-grid"></div>
+
+            <h3 style="color:var(--accent-color); margin: 20px 0 10px;">Customization</h3>
+            <div class="control-row"><span>Blur Effect</span><input type="range" min="0" max="30" value="15" oninput="updateSet('blur', this.value)"></div>
+            <div class="control-row"><span>Speed</span><input type="range" min="1" max="15" value="5" oninput="updateSet('speed', this.value)"></div>
+            <div class="control-row"><span>Color</span><input type="color" id="accent-color" value="#00ffcc" oninput="updateSet('color', this.value)" style="width:50%; height:30px; border:none; background:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const themes = [
+            { name: "Liquid", bg: "#0f2027", g1: "#203a43", g2: "#2c5364", glass: "rgba(255,255,255,0.1)", accent: "#00ffcc" },
+            { name: "Purple", bg: "#2a0845", g1: "#6441A5", g2: "#2a0845", glass: "rgba(255,255,255,0.15)", accent: "#ff00ff" },
+            { name: "Dark", bg: "#000", g1: "#1a1a1a", g2: "#000", glass: "rgba(30,30,30,0.5)", accent: "#fff" },
+            { name: "Neon", bg: "#ff9966", g1: "#ff5e62", g2: "#ff9966", glass: "rgba(255,255,255,0.2)", accent: "#ff0" },
+            { name: "Ocean", bg: "#000046", g1: "#1CB5E0", g2: "#000046", glass: "rgba(0,0,0,0.3)", accent: "#0ff" },
+            { name: "Pearl", bg: "#ECE9E6", g1: "#FFF", g2: "#ECE9E6", glass: "rgba(200,200,200,0.4)", accent: "#333" }
+        ];
+
+        const audio = document.getElementById('audio-player');
+        const playIcon = document.getElementById('play-icon');
+        const disc = document.getElementById('disc');
+        const prog = document.getElementById('progress');
+        let isPlaying = false;
+
+        function loadAudio(e) {
+            const file = e.target.files[0];
+            if(file) {
+                audio.src = URL.createObjectURL(file);
+                document.getElementById('track-title').innerText = file.name.replace(/\.[^/.]+$/, "");
+                audio.play(); isPlaying = true; updatePlay();
+            }
+        }
+        function togglePlay() {
+            if(!audio.src) return alert("Pehle folder icon se gaana select karein!");
+            isPlaying ? audio.pause() : audio.play();
+            isPlaying = !isPlaying; updatePlay();
+        }
+        function updatePlay() {
+            playIcon.className = isPlaying ? "fas fa-pause" : "fas fa-play";
+            isPlaying ? disc.classList.add('playing') : disc.classList.remove('playing');
+        }
+        audio.addEventListener('timeupdate', () => {
+            if(!audio.duration) return;
+            prog.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+            document.getElementById('current-time').innerText = format(audio.currentTime);
+            document.getElementById('total-time').innerText = format(audio.duration);
+        });
+        function seekAudio(e) {
+            if(audio.duration) audio.currentTime = (e.offsetX / document.getElementById('progress-bar').clientWidth) * audio.duration;
+        }
+        function format(s) { const min = Math.floor(s/60), sec = Math.floor(s%60); return `${min}:${sec<10?'0':''}${sec}`; }
+        
+        function toggleSettings() { document.getElementById('settings-overlay').classList.toggle('active'); }
+        
+        const root = document.documentElement;
+        themes.forEach((t, i) => {
+            const btn = document.createElement('div');
+            btn.className = `theme-btn ${i===0?'active':''}`; btn.innerText = t.name;
+            btn.style.background = `linear-gradient(45deg, ${t.bg}, ${t.g1})`;
+            btn.onclick = () => {
+                root.style.setProperty('--bg-color', t.bg); root.style.setProperty('--gradient-1', t.g1);
+                root.style.setProperty('--gradient-2', t.g2); root.style.setProperty('--glass-bg', t.glass);
+                root.style.setProperty('--accent-color', t.accent);
+                document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            };
+            document.getElementById('theme-grid').appendChild(btn);
+        });
+
+        function updateSet(type, val) {
+            if(type==='blur') root.style.setProperty('--blur-amount', `${val}px`);
+            if(type==='speed') root.style.setProperty('--animation-speed', `${16-val}s`);
+            if(type==='color') { root.style.setProperty('--accent-color', val); document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active')); }
+        }
+    </script>
+</body>
+</html>
